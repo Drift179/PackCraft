@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>CRAFT PACK - DASHBOARD ULTIMATE</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+        * { font-family: 'Press Start 2P', cursive; image-rendering: pixelated; box-sizing: border-box; }
+        body { background: #4a90e2; color: white; margin: 0; display: flex; height: 100vh; overflow: hidden; }
+        
+        /* SIDEBAR */
+        .sidebar { width: 300px; background: #2c2c2c; border-right: 6px solid #000; padding: 20px; display: flex; flex-direction: column; align-items: center; box-shadow: 5px 0 15px rgba(0,0,0,0.5); }
+        .perfil-img { width: 90px; height: 90px; border: 4px solid #55ff55; margin-bottom: 15px; background: #000; object-fit: cover; box-shadow: 0 0 10px #55ff55; }
+        
+        .nav-btn { width: 100%; padding: 15px; margin-bottom: 12px; background: #3c3c3c; border: 4px solid #000; color: #fff; cursor: pointer; font-size: 9px; transition: 0.2s; }
+        .nav-btn:hover { background: #555; transform: scale(1.02); }
+        .nav-btn.active { background: #55ff55; color: #000; border-color: #fff; }
+
+        /* CONTEÚDO PRINCIPAL */
+        .main-content { flex: 1; padding: 30px; background: #dbdbdb; color: #000; overflow-y: auto; border-left: 6px solid #fff; }
+        h1 { text-shadow: 3px 3px #fff; color: #000; font-size: 20px; }
+
+        .search-input { width: 100%; padding: 15px; background: #fff; border: 4px solid #000; color: #000; font-size: 10px; margin-bottom: 25px; box-shadow: 5px 5px 0 #888; }
+
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 25px; }
+        
+        /* CARD */
+        .card { background: #fff; border: 5px solid #000; padding: 15px; position: relative; box-shadow: 8px 8px 0 rgba(0,0,0,0.2); }
+        .card img.capa { width: 100%; height: 160px; object-fit: cover; border: 4px solid #000; margin-bottom: 10px; }
+        
+        .stats { font-size: 8px; color: #000; margin: 10px 0; background: #ffff55; padding: 8px; border: 2px solid #000; font-weight: bold; }
+        
+        .btn-denunciar { position: absolute; top: 10px; right: 10px; background: #ff3333; border: 3px solid #000; color: #fff; cursor: pointer; font-size: 12px; padding: 5px; }
+
+        /* COMENTARIOS */
+        .comm-box { background: #f0f0f0; padding: 10px; height: 110px; overflow-y: auto; border: 3px solid #000; margin: 10px 0; }
+        .comment { display: flex; align-items: center; margin-bottom: 10px; font-size: 7px; border-bottom: 1px solid #ccc; padding-bottom: 5px; }
+        .comment img { width: 22px; height: 22px; margin-right: 10px; border: 1px solid #000; background: #fff; }
+
+        .input-comm { background: #fff; border: 3px solid #000; padding: 10px; font-size: 8px; width: 70%; }
+        .btn-ok { background: #55ff55; border: 3px solid #000; padding: 9px; cursor: pointer; width: 25%; font-size: 8px; }
+
+        /* ADM */
+        .adm-row { background: #fff; border: 4px solid #000; padding: 15px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; }
+        .btn-del { background: #ff3333; color: #fff; border: 3px solid #000; cursor: pointer; padding: 8px; font-size: 8px; }
+        .btn-check { background: #55ff55; color: #000; border: 3px solid #000; cursor: pointer; padding: 8px; font-size: 8px; margin-right: 5px; }
+
+        .btn-sair { margin-top: auto; background: #ff3333; color: white; border: 4px solid #000; padding: 15px; width: 100%; cursor: pointer; font-size: 10px; }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <img id="minha-foto" class="perfil-img" src="">
+        <h2 id="welcome" style="font-size: 10px; color: #ffff55; text-align: center; margin-bottom: 25px;"></h2>
+        <button class="nav-btn active" id="btn-lista" onclick="tab('lista')">BIBLIOTECA</button>
+        <button class="nav-btn" id="btn-criar" onclick="tab('criar')">PAINEL / ADM</button>
+        <button class="btn-sair" onclick="location.href='index.html'">SAIR</button>
+    </div>
+
+    <div class="main-content" id="content"></div>
+
+    <script>
+        const eu = sessionStorage.getItem("logado") || "Convidado";
+        const isADM = (eu === "adriano" || eu === "mariano");
+        let queryBusca = "";
+        
+        let meusDados = localStorage.getItem("user_"+eu);
+        let minhaFoto = meusDados ? JSON.parse(meusDados).foto : "https://minotar.net/avatar/steve";
+        if(eu === "adriano") minhaFoto = "https://minotar.net/avatar/Herobrine";
+
+        document.getElementById("minha-foto").src = minhaFoto;
+        document.getElementById("welcome").innerText = eu.toUpperCase();
+
+        let mods = JSON.parse(localStorage.getItem("meus_mods") || "[]");
+
+        function tab(t) {
+            document.getElementById('btn-lista').classList.toggle('active', t === 'lista');
+            document.getElementById('btn-criar').classList.toggle('active', t === 'criar');
+            if (t === 'lista') renderLista(); else renderPainel();
+        }
+
+        function renderLista() {
+            let h = `<h1>BIBLIOTECA</h1>
+            <input type="text" class="search-input" id="search" placeholder="🔍 PESQUISAR MODPACK..." oninput="filtrar(this.value)" value="${queryBusca}">
+            <div class="grid">`;
+            
+            mods.filter(m => m.nome.toLowerCase().includes(queryBusca.toLowerCase())).forEach((m, i) => {
+                if(m.aprovado || isADM) {
+                    const realIdx = mods.indexOf(m);
+                    const media = (m.votos > 0 ? m.estrelas/m.votos : 0).toFixed(1);
+                    h += `
+                    <div class="card">
+                        <button class="btn-denunciar" title="Denunciar" onclick="denunciar(${realIdx})">⚠️</button>
+                        <img src="${m.foto}" class="capa">
+                        <h3>${m.nome.toUpperCase()}</h3>
+                        
+                        <div class="stats">📥 ${m.downloads || 0} DOWNS | ⭐ ${media} (${m.votos || 0}v)</div>
+                        
+                        <button class="nav-btn" style="background:#3c8527; color:#fff;" onclick="instalar(${realIdx})">INSTALAR PACK</button>
+                        <button class="nav-btn" style="background:#ffaa00; color:#000; font-size:7px;" onclick="votar(${realIdx})">AVALIAR</button>
+                        
+                        <div class="comm-box">
+                            ${(m.comentarios || []).map(c => `<div class="comment"><img src="${c.fotoUser}"><strong>${c.user}</strong>: ${c.texto}</div>`).join('')}
+                        </div>
+                        <div style="display:flex; gap:5px;">
+                            <input id="in-${realIdx}" class="input-comm" placeholder="Comentar...">
+                            <button class="btn-ok" onclick="comentar(${realIdx})">OK</button>
+                        </div>
+                    </div>`;
+                }
+            });
+            document.getElementById('content').innerHTML = h + `</div>`;
+        }
+
+        function instalar(i) {
+            mods[i].downloads = (mods[i].downloads || 0) + 1;
+            save();
+
+            // UPGRADE: VERIFICAÇÃO DO SKLAUNCHER
+            const jaTem = confirm("Você já tem o SKlauncher instalado no computador?");
+            
+            if(!jaTem) {
+                const l = "SKlauncher-3.2.18_Setup.exe";
+                const a = document.createElement("a"); a.href = "./"+l; a.download = l; a.click();
+                alert("Baixando Launcher e Modpack...");
+            } else {
+                alert("Launcher ignorado. Baixando apenas o Modpack!");
+            }
+
+            if(mods[i].fileData) {
+                const d = document.createElement("a"); d.href = mods[i].fileData; d.download = mods[i].fileName; d.click();
+            }
+            renderLista();
+        }
+
+        function denunciar(i) {
+            if(!mods[i].denuncias) mods[i].denuncias = [];
+            
+            // UPGRADE: LIMITE DE DENÚNCIA POR USUÁRIO
+            const jaDenunciou = mods[i].denuncias.some(d => d.por === eu);
+            if(jaDenunciou) {
+                alert("Você já denunciou este pack!");
+            } else {
+                mods[i].denuncias.push({ por: eu });
+                save();
+                alert("Mod denunciado ao Adriano!");
+            }
+        }
+
+        function votar(i) {
+            const n = parseInt(prompt("De 1 a 5 estrelas:"));
+            if(n >= 1 && n <= 5) {
+                mods[i].estrelas = (mods[i].estrelas || 0) + n;
+                mods[i].votos = (mods[i].votos || 0) + 1;
+                save(); renderLista();
+            }
+        }
+
+        function comentar(i) {
+            const txt = document.getElementById("in-"+i).value;
+            if(!txt) return;
+            if(!mods[i].comentarios) mods[i].comentarios = [];
+            mods[i].comentarios.push({ user: eu, texto: txt, fotoUser: minhaFoto });
+            save(); renderLista();
+        }
+
+        function renderPainel() {
+            const area = document.getElementById('content');
+            if(isADM) {
+                let h = "<h1>PAINEL ADM</h1>";
+                h += "<h3>GERENCIAR MODS</h3>";
+                mods.forEach((m, i) => {
+                    h += `<div class="adm-row">
+                        <span>${m.nome} [${m.aprovado ? '✅' : '⏳'}]</span>
+                        <div>
+                            ${!m.aprovado ? `<button class="btn-check" onclick="aprovar(${i})">ACEITAR</button>` : ''}
+                            <button class="btn-del" onclick="excluirMod(${i})">EXCLUIR</button>
+                        </div>
+                    </div>`;
+                });
+
+                h += "<h3 style='color:red; margin-top:30px;'>🚨 DENÚNCIAS</h3>";
+                mods.forEach((m, i) => {
+                    if(m.denuncias && m.denuncias.length > 0) {
+                        h += `<div class="adm-row" style="border-color:red; background:#fff0f0;">
+                            <span><strong>${m.nome}</strong> (${m.denuncias.length} denúncias)</span>
+                            <button class="btn-del" onclick="limparDenuncias(${i})">LIMPAR</button>
+                        </div>`;
+                    }
+                });
+                area.innerHTML = h;
+            } else {
+                area.innerHTML = `<h1>ENVIAR MEU PACK</h1>
+                <div class="card">
+                    NOME DO MOD:<br><input id="n" class="search-input" style="margin-bottom:10px;">
+                    LINK DA IMAGEM:<br><input id="c" class="search-input" style="margin-bottom:10px;">
+                    ARQUIVO .ZIP:<br><input type="file" id="f" style="margin-bottom:20px;">
+                    <button class="nav-btn" style="background:#55ff55; color:#000;" onclick="enviar()">ENVIAR PARA ANALISE</button>
+                </div>`;
+            }
+        }
+
+        function excluirMod(i) { if(confirm("Apagar?")) { mods.splice(i, 1); save(); renderPainel(); } }
+        function limparDenuncias(i) { mods[i].denuncias = []; save(); renderPainel(); }
+        function aprovar(i) { mods[i].aprovado = true; save(); renderPainel(); }
+
+        function enviar() {
+            const n = document.getElementById("n").value;
+            const c = document.getElementById("c").value;
+            const f = document.getElementById("f").files[0];
+            if(!n || !f) return alert("Preencha tudo!");
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                mods.push({
+                    nome: n, foto: c || "https://via.placeholder.com/300", autor: eu, 
+                    fileData: e.target.result, fileName: f.name, aprovado: false,
+                    downloads: 0, estrelas: 0, votos: 0, comentarios: [], denuncias: []
+                });
+                save(); alert("Enviado!"); tab('lista');
+            };
+            reader.readAsDataURL(f);
+        }
+
+        function filtrar(val) { queryBusca = val; renderLista(); }
+        function save() { localStorage.setItem("meus_mods", JSON.stringify(mods)); }
+
+        tab('lista');
+    </script>
+</body>
+</html>

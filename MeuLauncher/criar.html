@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>CRAFT PACK - PAINEL ADM</title>
+     <link rel="icon" type="image/png" href="file:///C:/Users/Usu%C3%A1rio/Downloads/WhatsApp%20Image%202026-02-08%20at%2021.09.10.jpeg">
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+        * { font-family: 'Press Start 2P', cursive; image-rendering: pixelated; box-sizing: border-box; }
+      body { background: #000; color: white;  margin: 0;
+          padding: 40px;
+    min-height: 100vh;
+
+
+
+    background-image: url("https://files.passeidireto.com/70a53b52-c271-4d16-ae48-c8219f3e6a99/70a53b52-c271-4d16-ae48-c8219f3e6a99.png");
+    background-size: cover;
+        }
+        .form-box { background: #C6C6C6; border: 5px solid #000; border-top-color: #FFF; border-left-color: #FFF; padding: 30px; max-width: 700px; margin: auto; color: #000; box-shadow: 10px 10px 0px #333; }
+        h1 { text-align: center; text-shadow: 4px 4px #000; margin-bottom: 30px; color: #fff; }
+        input { width: 100%; padding: 15px; margin: 10px 0; background: #000; color: #fff; border: 3px solid #555; font-size: 10px; }
+        
+        .mc-btn { padding: 15px; background: #AAAAAA; border: 4px solid #000; border-top-color: #EEE; color: #fff; cursor: pointer; text-shadow: 2px 2px #333; font-size: 10px; margin-bottom: 5px; }
+        .mc-btn:hover { background: #7ba4ff; }
+        
+        .adm-item { background: #8b8b8b; border: 4px solid #000; padding: 20px; margin-bottom: 20px; color: #000; }
+        .btn-green { background: #00AA00; border-top-color: #55FF55; }
+        .btn-red { background: #AA0000; border-top-color: #FF5555; }
+        .status-badge { font-size: 8px; padding: 4px; background: #333; color: #fff; display: inline-block; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+    <button class="mc-btn" onclick="location.href='home.html'">VOLTAR AO MENU</button>
+    <div id="painel"></div>
+
+    <script>
+        const eu = sessionStorage.getItem("logado");
+        let mods = JSON.parse(localStorage.getItem("meus_mods") || "[]");
+
+        function renderizarPainel() {
+            const container = document.getElementById("painel");
+            
+            if(eu === "adriano") {
+                let h = "<h1>PAINEL DO ADRIANO</h1><div class='form-box'>";
+                if(mods.length === 0) h += "<p style='text-align:center'>NENHUM MOD ENCONTRADO.</p>";
+                
+                mods.forEach((m, i) => {
+                    h += `
+                    <div class="adm-item">
+                        <div class="status-badge">${m.aprovado ? "✅ ONLINE" : "⏳ AGUARDANDO APROVAÇÃO"}</div><br>
+                        <strong>NOME:</strong> ${m.nome}<br>
+                        <strong>AUTOR:</strong> ${m.autor}<br><br>
+                        <div style="display:flex; gap: 10px; flex-wrap: wrap;">
+                            ${!m.aprovado ? 
+                                `<button class="mc-btn btn-green" onclick="decidir(${i}, true)">ACEITAR</button>
+                                 <button class="mc-btn btn-red" onclick="decidir(${i}, false)">RECUSAR (APAGAR)</button>` 
+                                : `<button class="mc-btn btn-red" onclick="deletarMod(${i})">DELETAR MOD DO SITE</button>`
+                            }
+                        </div>
+                    </div>`;
+                });
+                container.innerHTML = h + "</div>";
+            } else {
+                // TELA DO USUÁRIO NORMAL
+                container.innerHTML = `
+                <h1>ENVIAR MODPACK</h1>
+                <div class="form-box">
+                    NOME DO MOD:<br><input id="n" placeholder="Ex: RLCraft Br">
+                    URL DA CAPA:<br><input id="img" placeholder="https://link-da-imagem.png">
+                    FICHEIRO (.zip):<br><input type="file" id="f">
+                    <button class="mc-btn btn-green" style="width:100%; margin-top:20px;" onclick="enviarMod()">ENVIAR PARA O ADRIANO</button>
+                </div>`;
+            }
+        }
+
+        // --- FUNÇÕES DE COMANDO DO ADRIANO ---
+
+        function decidir(index, status) {
+            if(status === true) {
+                mods[index].aprovado = true;
+                alert("MOD APROVADO COM SUCESSO!");
+            } else {
+                if(confirm("Deseja mesmo RECUSAR e APAGAR este pedido?")) {
+                    mods.splice(index, 1);
+                } else { return; }
+            }
+            atualizarBaseDeDados();
+        }
+
+        function deletarMod(index) {
+            if(confirm("⚠️ ATENÇÃO: Deseja apagar este mod permanentemente do site?")) {
+                mods.splice(index, 1);
+                atualizarBaseDeDados();
+            }
+        }
+
+        function atualizarBaseDeDados() {
+            localStorage.setItem("meus_mods", JSON.stringify(mods));
+            // Força a atualização da lista antes de recarregar
+            renderizarPainel();
+            location.reload(); 
+        }
+
+        // --- FUNÇÃO DE ENVIO ---
+
+        function enviarMod() {
+            const n = document.getElementById("n").value;
+            const img = document.getElementById("img").value;
+            const f = document.getElementById("f").files[0];
+
+            if(!n || !f) return alert("Preencha o nome e selecione o ficheiro!");
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const novoMod = {
+                    nome: n,
+                    autor: eu,
+                    foto: img || 'https://via.placeholder.com/150',
+                    fileData: e.target.result,
+                    fileName: f.name,
+                    aprovado: false,
+                    votos: 0,
+                    estrelas: 0,
+                    comentarios: []
+                };
+                
+                mods.push(novoMod);
+                localStorage.setItem("meus_mods", JSON.stringify(mods));
+                alert("ENVIADO COM SUCESSO! AGUARDE O ADRIANO ACEITAR.");
+                location.href = "home.html";
+            };
+            reader.readAsDataURL(f);
+        }
+
+        // Inicia a página
+        renderizarPainel();
+    </script>
+</body>
+</html>

@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>CRAFT PACK - LOGIN</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        * { font-family: 'Press Start 2P', cursive; image-rendering: pixelated; box-sizing: border-box; }
+        body { 
+            margin: 0; padding: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center; 
+            background: url("https://files.passeidireto.com/70a53b52-c271-4d16-ae48-c8219f3e6a99/70a53b52-c271-4d16-ae48-c8219f3e6a99.png") no-repeat center center fixed;
+            background-size: cover; overflow: hidden;
+        }
+        /* TELA DE LOADING */
+        #loading {
+            position: fixed; top:0; left:0; width:100%; height:100%; background:#000;
+            display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 100;
+        }
+        .bar { width: 300px; height: 20px; border: 4px solid #fff; background: #333; margin-top: 20px; }
+        .fill { width: 0%; height: 100%; background: #55ff55; }
+
+        .login-box { width: 450px; padding: 40px; background: #C6C6C6; border: 5px solid #000; border-top-color: #FFF; border-left-color: #FFF; text-align: center; box-shadow: 10px 10px 0px rgba(0,0,0,0.5); position: relative; }
+        .logo { font-size: 18px; color: #fff; text-shadow: 4px 4px #000; margin-bottom: 30px; }
+        input { width: 100%; padding: 15px; margin-bottom: 12px; background: #000; border: 3px solid #555; color: #55FF55; font-size: 10px; outline: none; }
+        .mc-btn { width: 100%; padding: 18px; background: #AAAAAA; border: 4px solid #000; border-top-color: #EEE; border-left-color: #EEE; color: #fff; text-shadow: 2px 2px #333; cursor: pointer; font-size: 10px; }
+        .mc-btn:hover { background: #7ba4ff; }
+        .toggle-link { display: block; margin-top: 20px; font-size: 8px; color: #444; cursor: pointer; text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <div id="loading">
+        <div style="color:white; font-size:12px;">AUTENTICANDO...</div>
+        <div class="bar"><div id="fill" class="fill"></div></div>
+    </div>
+
+    <div class="login-box">
+        <div id="st" class="logo">CRAFT PACK<br><span style="color:#ffff55;">DATABASE</span></div>
+        <input type="text" id="u" placeholder="USUÁRIO">
+        <input type="password" id="s" placeholder="SENHA">
+        <input type="text" id="img" placeholder="URL DA FOTO DE PERFIL" style="display:none;">
+        <button class="mc-btn" id="bt" onclick="exec()">ENTRAR</button>
+        <span class="toggle-link" id="lk" onclick="alt()">NÃO TEM CONTA? CRIE UMA</span>
+    </div>
+
+    <script>
+        let cad = false;
+        function alt() {
+            cad = !cad;
+            document.getElementById("st").innerHTML = cad ? "REGISTRAR<br><span style='color:#55ff55;'>PERFIL</span>" : "CRAFT PACK<br><span style='color:#ffff55;'>DATABASE</span>";
+            document.getElementById("bt").innerText = cad ? "CRIAR CONTA" : "ENTRAR";
+            document.getElementById("lk").innerText = cad ? "VOLTAR" : "NÃO TEM CONTA? CRIE UMA";
+            document.getElementById("img").style.display = cad ? "block" : "none";
+        }
+
+        function exec() {
+            const u = document.getElementById("u").value.trim().toLowerCase();
+            const s = document.getElementById("s").value;
+            const img = document.getElementById("img").value || "https://minotar.net/avatar/steve"; 
+
+            if(!u || !s) return alert("Preencha tudo!");
+
+            if(cad) {
+                const userData = { senha: s, foto: img };
+                localStorage.setItem("user_"+u, JSON.stringify(userData));
+                confetti();
+                alert("CONTA CRIADA!");
+                alt();
+            } else {
+                let data = localStorage.getItem("user_"+u);
+                let pass = data ? JSON.parse(data).senha : null;
+                
+                // Logins especiais
+                if(u === "adriano" && s === "adrin7777no") pass = s;
+                if(u === "mariano" && s === "185292") pass = s;
+
+                if(pass === s) {
+                    document.getElementById("loading").style.display = "flex";
+                    let p = 0;
+                    const it = setInterval(() => {
+                        p += 10;
+                        document.getElementById("fill").style.width = p + "%";
+                        if(p >= 100) {
+                            clearInterval(it);
+                            sessionStorage.setItem("logado", u);
+                            window.location.href = "home.html";
+                        }
+                    }, 100);
+                } else {
+                    alert("DADOS INCORRETOS!");
+                }
+            }
+        }
+    </script>
+</body>
+</html>
